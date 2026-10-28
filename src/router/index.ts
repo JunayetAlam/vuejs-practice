@@ -6,6 +6,7 @@ import CounterView from "@/views/CounterView.vue";
 import NotFoundView from "@/views/NotFoundView.vue";
 import { createRouter, createWebHistory } from "vue-router";
 import LayoutThree from "@/layouts/LayoutThree.vue";
+import UserView from "@/views/UserView.vue";
 
 const routes = [
   {
@@ -43,6 +44,13 @@ const routes = [
                 path: "layout-three",
                 name: "layout-three",
                 component: LayoutThree,
+                children: [
+                  {
+                    path: "",
+                    name: "user-data",
+                    component: UserView,
+                  },
+                ],
               },
             ],
           },
