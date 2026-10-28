@@ -7,6 +7,9 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    host: true, // listen on all network addresses, not just localhost
+  },
   plugins: [
     vue(),
     vueDevTools(),

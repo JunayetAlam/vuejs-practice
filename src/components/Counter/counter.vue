@@ -5,13 +5,69 @@ import Container from "../Container.vue";
 import Button from "../ui/button/Button.vue";
 import { onMounted, onUnmounted, ref } from "vue";
 import Timer from "./timer.vue";
+import StartScreen from "./start-screen.vue";
+import Countdown from "./countdown.vue";
+import ResultScreen from "./result-screen.vue";
+import { useBestScore } from "../../composables/useBestScore";
+
+type Phase = "idle" | "countdown" | "playing" | "finished";
 
 const count = ref(0);
 const enterKeyPressButton = ref<InstanceType<typeof Button> | null>(null);
 const maxCount = 10;
 const secondTimer = ref(maxCount);
 
-let timer: ReturnType<typeof setInterval>;
+const phase = ref<Phase>("idle");
+const countdown = ref(3);
+const { bestScore, submitScore } = useBestScore();
+const isNewBest = ref(false);
+
+let timer: ReturnType<typeof setInterval> | undefined;
+
+const stopTimer = () => {
+  clearInterval(timer);
+  timer = undefined;
+};
+
+const finishGame = () => {
+  stopTimer();
+  isNewBest.value = submitScore(count.value);
+  phase.value = "finished";
+};
+
+const startGame = () => {
+  stopTimer();
+  phase.value = "playing";
+  timer = setInterval(() => {
+    secondTimer.value--;
+
+    if (secondTimer.value <= 0) {
+      finishGame();
+    }
+  }, 1000);
+};
+
+const startCountdown = () => {
+  stopTimer();
+  count.value = 0;
+  secondTimer.value = maxCount;
+  countdown.value = 3;
+  phase.value = "countdown";
+  timer = setInterval(() => {
+    countdown.value--;
+
+    if (countdown.value <= 0) {
+      startGame();
+    }
+  }, 1000);
+};
+
+const cancel = () => {
+  stopTimer();
+  count.value = 0;
+  secondTimer.value = maxCount;
+  phase.value = "idle";
+};
 
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.key === "Enter" && !event.repeat) {
@@ -25,7 +81,12 @@ const handleKeyDown = (event: KeyboardEvent) => {
 
     // stops Enter from clicking the focused button (e.g. Reset)
     event.preventDefault();
-    enterKeyPressButton.value?.$el.click();
+
+    if (phase.value === "idle") {
+      startCountdown();
+    } else if (phase.value === "playing") {
+      enterKeyPressButton.value?.$el.click();
+    }
   }
 };
 
@@ -35,31 +96,15 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyDown);
+  stopTimer();
 });
 
-onMounted(() => {
-  timer = setInterval(() => {
-    secondTimer.value--;
-
-    if (secondTimer.value < 0) {
-      reset();
-    }
-  }, 1000);
-});
-
-onUnmounted(() => {
-  clearInterval(timer);
-});
 const increment = () => {
+  if (phase.value !== "playing") return;
   count.value++;
 };
 const decrement = () => {
   count.value--;
-};
-
-const reset = () => {
-  count.value = 0;
-  secondTimer.value = maxCount;
 };
 </script>
 
@@ -95,11 +140,18 @@ const reset = () => {
             Press Enter <HugeiconsIcon :icon="Plus" class="size-9" />
           </Button>
         </div>
-        <div class="text-center pt-10">
+        <div class="flex justify-center gap-4 pt-10">
+          <Button
+            variant="outline"
+            class="px-12! h-18 text-2xl"
+            @click="cancel"
+          >
+            Cancel
+          </Button>
           <Button
             variant="secondary"
             class="px-20! h-18 text-2xl"
-            @click="reset"
+            @click="startCountdown"
           >
             Reset
             <HugeiconsIcon :icon="Refresh" class="size-9" />
@@ -107,7 +159,21 @@ const reset = () => {
         </div>
       </div>
     </div>
+
+    <StartScreen
+      v-if="phase === 'idle'"
+      :best-score="bestScore"
+      :seconds="maxCount"
+      @start="startCountdown"
+    />
+    <Countdown v-else-if="phase === 'countdown'" :value="countdown" />
+    <ResultScreen
+      v-else-if="phase === 'finished'"
+      :score="count"
+      :best-score="bestScore"
+      :is-new-best="isNewBest"
+      @restart="startCountdown"
+      @home="cancel"
+    />
   </Container>
 </template>
-
-<style></style>
