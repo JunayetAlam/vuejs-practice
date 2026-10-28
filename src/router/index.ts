@@ -1,8 +1,11 @@
+import DefaultView from "@/views/DefaultVue.vue";
+import LayoutOne from "@/layouts/LayoutOne.vue";
 import LayoutTwo from "@/layouts/LayoutTwo.vue";
 import MainLayout from "@/layouts/MainLayout.vue";
 import CounterView from "@/views/CounterView.vue";
-import HomeView from "@/views/HomeView.vue";
+import NotFoundView from "@/views/NotFoundView.vue";
 import { createRouter, createWebHistory } from "vue-router";
+import LayoutThree from "@/layouts/LayoutThree.vue";
 
 const routes = [
   {
@@ -13,19 +16,50 @@ const routes = [
       {
         path: "",
         name: "home-default",
-        component: HomeView,
+        component: LayoutOne,
+        children: [
+          {
+            path: "",
+            name: "layout-one",
+            component: DefaultView,
+            props: {
+              url: "layout-two",
+            },
+          },
+          {
+            path: "/layout-two",
+            name: "layout-two",
+            component: LayoutTwo,
+            children: [
+              {
+                path: "",
+                name: "layout-two-data",
+                component: DefaultView,
+                props: {
+                  url: "/layout-two/layout-three",
+                },
+              },
+              {
+                path: "layout-three",
+                name: "layout-three",
+                component: LayoutThree,
+              },
+            ],
+          },
+        ],
       },
-      {
-        path: "/layout-two",
-        name: "home-layout-two",
-        component: LayoutTwo,
-      },
+
       {
         path: "/counter",
         name: "counter",
         component: CounterView,
       },
     ],
+  },
+  {
+    path: "/:pathMatch(.*)*",
+    name: "not-found",
+    component: NotFoundView,
   },
 ];
 

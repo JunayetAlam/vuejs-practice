@@ -11,6 +11,6 @@ import Container from "@/components/Container.vue";
       </ul>
     </nav>
 
-    <slot />
+    <RouterView />
   </Container>
 </template>
